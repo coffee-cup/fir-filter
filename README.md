@@ -9,6 +9,8 @@ in ASM.
 - [ ] Investigate MLA (multiple and accumulate) instruction
 - [ ] Investigate Vector instructions
 - [ ] Investigate combining MLA and Vector instructions
+- [ ] Optimized ASM
+- [ ] Designed hardware instruction
 
 ## Building Project
 
