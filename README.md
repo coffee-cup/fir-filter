@@ -14,8 +14,22 @@ in ASM.
 
 ## Building Project
 
+Make is used to build the project. There are two make commands available
+
+Generate ARM assembly
+
 ``` shell
-make
+make asm
 ```
 
+Generate ARM binary
+
+``` shell
+make binary
+```
+
+By default, the `asm` command is run
+
 ## Running Project
+
+Use `qemu`

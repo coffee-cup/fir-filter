@@ -1,9 +1,3 @@
-/* #include "arm_neon.h" */
-
-/* uint32x2_t aa, bb, ss; */
-
-/* int main(void) { ss = vadd_u32(aa, bb); } */
-
 int fir(int *x, int *coefs, int n) {
     int sum = 0;
     for (int i = 0; i < n; ++i) {
