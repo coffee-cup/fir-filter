@@ -9,7 +9,7 @@ asm: $(CFILE)
 	$(CC) $(CFLAGS) -S -o $(CASM) $(CFILE)
 
 binary: $(CFILE)
-	$(CC) $(CFLAGS) --specs=nosys.specs -o $(CCODE) $(CFILE)
+	$(CC) $(CFLAGS) -o $(CCODE) $(CFILE)
 
 .PHONY: all
 all: asm
