@@ -1,53 +1,83 @@
 #include <stdio.h>
 
+#define SIGNAL_LENGTH (8)
+#define TAPS_LENGTH (8)
+#define NUM_COEFS (4)
 
-void fir(int *x, int *h, int *y, unsigned int num_coefs, const unsigned int N) {
-  int X[8] = {0}; // set working array to 0
+void unoptimized(int *input, int *coefs, int *taps, int *output) {
   int yn = 0;
-
   int i, k;
 
-  // we will have N outputs
-  for (i = 0; i < N; i++) {
+  // loop throught the output signal
+  for (i = 0; i < SIGNAL_LENGTH; ++i) {
 
     // shift data to right
-    for (k = N - 1; k > 0; k--) {
-      X[k] = X[k - 1];
+    for (k = TAPS_LENGTH - 1; k > 0; k--) {
+      taps[k] = taps[k - 1];
     }
 
-    // move input sample to buffer
-    X[0] = x[i];
+    // move input sample into taps
+    taps[0] = input[i];
 
     // clear output sample
     yn = 0;
 
-    for (k = 0; k < num_coefs; k++) {
-      yn += h[k] * X[k]; // multiply data on coefficients with accumulation
+    // perform the convolution for a single output sample
+    for (k = 0; k < NUM_COEFS; ++k) {
+      yn += coefs[k] * taps[k];
     }
 
     // save yn to output position
-    y[i] = yn;
+    output[i] = yn;
   }
 }
 
-void print_output(int *y, unsigned int N) {
+void print_output(int *output) {
   int i;
-  for (i = 0; i < N; ++i) {
-    printf("%d, ", y[i]);
+  for (i = 0; i < SIGNAL_LENGTH; ++i) {
+    printf("%d, ", output[i]);
   }
   printf("\n");
 }
 
+void init(int *input, int *coefs, int *taps, int *output) {
+    int i;
+
+    // zero the taps
+    for (i = 0; i < TAPS_LENGTH; ++i) {
+        taps[i] = 0;
+    }
+
+    // set values for coefs
+    // TODO: make this better
+    int h[NUM_COEFS] = {3, -1, 2, 1};
+    for (i = 0; i < NUM_COEFS; ++i) {
+        coefs[i] = h[i];
+    }
+
+    // set values for input signal and zero output
+    // TODO: make this better
+    int x[SIGNAL_LENGTH] = {2, 4, 6, 4, 2, 0, 0, 0};
+    for (i = 0; i < SIGNAL_LENGTH; ++i) {
+        input[i] = x[i];
+        output[i] = 0;
+    }
+}
+
 int main(void) {
-  unsigned int N = 5;
-  unsigned int num_coefs = 4;
+  int input[SIGNAL_LENGTH];
+  int coefs[NUM_COEFS];
+  int taps[TAPS_LENGTH];
+  int output[SIGNAL_LENGTH];
 
-  int x[8] = {2, 4, 6, 4, 2, 0, 0, 0};
-  int h[4] = {3, -1, 2, 1};
-  int y[8] = {0};
+  // Initialize all arrays
+  init(input, coefs, taps, output);
 
-  fir(x, h, y, 4, 8);
-  print_output(y, 8);
+  // Compute output signal
+  unoptimized(input, coefs, taps, output);
+
+  // Print output signal
+  print_output(output);
 
   return 0;
 }

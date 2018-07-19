@@ -5,14 +5,18 @@ CCODE = main
 CFILE = $(CCODE).c
 CASM = $(CCODE).s
 
-asm: $(CFILE)
-	$(CC) $(CFLAGS) -S -o $(CASM) $(CFILE)
-
 binary: $(CFILE)
 	$(CC) $(CFLAGS) -o $(CCODE) $(CFILE)
 
+asm: $(CFILE)
+	$(CC) $(CFLAGS) -S -o $(CASM) $(CFILE)
+
+
+run: $(CCODE)
+	qemu-arm $(CCODE)
+
 .PHONY: all
-all: asm
+all: binary
 
 .PHONY: clean
 clean:
