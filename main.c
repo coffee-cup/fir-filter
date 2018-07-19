@@ -4,8 +4,8 @@
 #define TAPS_LENGTH (8)
 #define NUM_COEFS (4)
 
-#define true  (1)
-#define false (0)
+#define true(1)
+#define false(0)
 
 // Compute entire output FIR
 void unoptimized(int *input, int *coefs, int *taps, int *output, int n) {
@@ -89,7 +89,7 @@ int main(void) {
 
   // Initialize first element of tap to x[0]
   taps[0] = input[0];
-  
+
   // loop through the output signal
   int i;
   for (i = 0; i < SIGNAL_LENGTH; ++i) {
