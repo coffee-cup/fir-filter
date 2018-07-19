@@ -4,37 +4,32 @@
 #define TAPS_LENGTH (8)
 #define NUM_COEFS (4)
 
-#define true (1)
+#define true  (1)
 #define false (0)
 
-void unoptimized(int *input, int *coefs, int *taps, int *output) {
-  int yn = 0;
-  int i, k;
+// Compute entire output FIR
+void unoptimized(int *input, int *coefs, int *taps, int *output, int n) {
+  int k;
 
-  // loop throught the output signal
-  for (i = 0; i < SIGNAL_LENGTH; ++i) {
+  // move input sample into taps
+  taps[0] = input[n];
 
-    // shift data to right
-    for (k = TAPS_LENGTH - 1; k > 0; k--) {
-      taps[k] = taps[k - 1];
-    }
+  // perform the convolution for a single output sample
+  int sum = 0;
+  for (k = 0; k < NUM_COEFS; ++k) {
+    sum += coefs[k] * taps[k];
+  }
 
-    // move input sample into taps
-    taps[0] = input[i];
+  // Place sum in output signal
+  output[n] = sum;
 
-    // clear output sample
-    yn = 0;
-
-    // perform the convolution for a single output sample
-    for (k = 0; k < NUM_COEFS; ++k) {
-      yn += coefs[k] * taps[k];
-    }
-
-    // save yn to output position
-    output[i] = yn;
+  // shift taps to right
+  for (k = TAPS_LENGTH - 1; k > 0; k--) {
+    taps[k] = taps[k - 1];
   }
 }
 
+// Initializes all the arrays with values for the testbench
 void init(int *input, int *coefs, int *taps, int *output) {
   int i;
 
@@ -59,6 +54,7 @@ void init(int *input, int *coefs, int *taps, int *output) {
   }
 }
 
+// Print the output array
 void print_output(int *output) {
   int i;
   for (i = 0; i < SIGNAL_LENGTH; ++i) {
@@ -89,8 +85,18 @@ int main(void) {
   // Initialize all arrays
   init(input, coefs, taps, output);
 
-  // Compute output signal
-  unoptimized(input, coefs, taps, output);
+  /* START FIR */
+
+  // Initialize first element of tap to x[0]
+  taps[0] = input[0];
+  
+  // loop through the output signal
+  int i;
+  for (i = 0; i < SIGNAL_LENGTH; ++i) {
+    unoptimized(input, coefs, taps, output, i);
+  }
+
+  /* END FIR */
 
   // Print output signal
   print_output(output);
