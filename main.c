@@ -4,11 +4,11 @@
 #define TAPS_LENGTH (8)
 #define NUM_COEFS (4)
 
-#define true(1)
-#define false(0)
+#define TRUE (1)
+#define FALSE (0)
 
-// Compute entire output FIR
-void unoptimized(int *input, int *coefs, int *taps, int *output, int n) {
+// Unoptimized C
+void unoptimized_fir(short *input, short *coefs, short *taps, short *output, short n) {
   int k;
 
   // move input sample into taps
@@ -29,8 +29,39 @@ void unoptimized(int *input, int *coefs, int *taps, int *output, int n) {
   }
 }
 
+// Optimized C
+/*
+  Optimizations:
+  1. Use short's (16 bit) instead of int's (32 bit)
+  2. Use restrict pointers as arrays should never be the same
+  3. Use registers for variables that will be accessed a lot
+*/
+inline void optimized_fir(short *input, short * coefs,
+                   short *taps, short *output,
+                   short n) {
+
+  register int k;
+  register int sum = 0;
+
+  // move input sample into taps
+  taps[0] = input[n];
+
+  // perform the convolution for a single output sample
+  for (k = NUM_COEFS - 1; k >= 0; k--) {
+    sum += (int)coefs[k] * (int)taps[k];
+  }
+
+  // Place sum in output signal
+  output[n] = (short)(sum);
+
+  // shift taps to right
+  for (k = TAPS_LENGTH - 1; k > 0; k--) {
+    taps[k] = taps[k - 1];
+  }
+}
+
 // Initializes all the arrays with values for the testbench
-void init(int *input, int *coefs, int *taps, int *output) {
+void init(short *input, short *coefs, short *taps, short *output) {
   int i;
 
   // zero the taps
@@ -40,14 +71,14 @@ void init(int *input, int *coefs, int *taps, int *output) {
 
   // set values for coefs
   // TODO: make this better
-  int h[NUM_COEFS] = {3, -1, 2, 1};
+  short h[NUM_COEFS] = {3, -1, 2, 1};
   for (i = 0; i < NUM_COEFS; ++i) {
     coefs[i] = h[i];
   }
 
   // set values for input signal and zero output
   // TODO: make this better
-  int x[SIGNAL_LENGTH] = {2, 4, 6, 4, 2, 0, 0, 0};
+  short x[SIGNAL_LENGTH] = {2, 4, 6, 4, 2, 0, 0, 0};
   for (i = 0; i < SIGNAL_LENGTH; ++i) {
     input[i] = x[i];
     output[i] = 0;
@@ -55,7 +86,7 @@ void init(int *input, int *coefs, int *taps, int *output) {
 }
 
 // Print the output array
-void print_output(int *output) {
+void print_output(short *output) {
   int i;
   for (i = 0; i < SIGNAL_LENGTH; ++i) {
     printf("%d, ", output[i]);
@@ -63,43 +94,44 @@ void print_output(int *output) {
   printf("\n");
 }
 
-// Returns true if actual == expected
-int compare_output(int *actual, int *expected, int size) {
+// Returns TRUE if actual == expected
+int compare_output(short *actual, short *expected, int size) {
   int i;
   for (i = 0; i < size; ++i) {
     if (actual[i] != expected[i]) {
-      return false;
+      return FALSE;
     }
   }
-  return true;
+  return TRUE;
 }
 
 int main(void) {
-  int input[SIGNAL_LENGTH];
-  int coefs[NUM_COEFS];
-  int taps[TAPS_LENGTH];
-  int output[SIGNAL_LENGTH];
+  short input[SIGNAL_LENGTH];
+  short coefs[NUM_COEFS];
+  short taps[TAPS_LENGTH];
+  short output[SIGNAL_LENGTH];
 
-  int expected[SIGNAL_LENGTH] = {6, 10, 18, 16, 18, 12, 8, 2};
+  short expected[SIGNAL_LENGTH] = {6, 10, 18, 16, 18, 12, 8, 2};
 
   // Initialize all arrays
   init(input, coefs, taps, output);
 
   /* START FIR */
 
-  // Initialize first element of tap to x[0]
-  taps[0] = input[0];
-
   // loop through the output signal
   int i;
   for (i = 0; i < SIGNAL_LENGTH; ++i) {
-    unoptimized(input, coefs, taps, output, i);
+    unoptimized_fir(input, coefs, taps, output, i);
   }
 
   /* END FIR */
 
   // Print output signal
+  printf("Actual\n");
   print_output(output);
+
+  printf("Expected\n");
+  print_output(expected);
 
   // Ensure output matches expected output
   if (!compare_output(output, expected, SIGNAL_LENGTH)) {
