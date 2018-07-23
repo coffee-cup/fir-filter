@@ -6,6 +6,28 @@
 #define TRUE (1)
 #define FALSE (0)
 
+#define MACRO_FIR(input, coefs, taps, output, n)                               \
+    ({                                                                         \
+        register int k;                                                        \
+        register int sum = 0;                                                  \
+                                                                               \
+        /* move input sample into taps */                                      \
+        taps[0] = input[n];                                                    \
+                                                                               \
+        /* perform the convolution for a single output sample */               \
+        for (k = TAPS_LENGTH - 1; k >= 0; k--) {                               \
+            sum += (int)coefs[k] * (int)taps[k];                               \
+        }                                                                      \
+                                                                               \
+        /* Place sum in output signal */                                       \
+        output[n] = (short)(sum);                                              \
+                                                                               \
+        /* shift taps to right */                                              \
+        for (k = TAPS_LENGTH - 1; k > 0; k--) {                                \
+            taps[k] = taps[k - 1];                                             \
+        }                                                                      \
+    })
+
 // Unoptimized C
 void unoptimized_fir(short *input, short *coefs, short *taps, short *output,
                      short n) {
@@ -38,7 +60,6 @@ void unoptimized_fir(short *input, short *coefs, short *taps, short *output,
 */
 inline void optimized_fir(short *input, short *coefs, short *taps,
                           short *output, short n) {
-
     register int k;
     register int sum = 0;
 
@@ -123,7 +144,10 @@ int main(void) {
     short input[SIGNAL_LENGTH];
     short coefs[TAPS_LENGTH];
     short taps[TAPS_LENGTH];
-    short output[SIGNAL_LENGTH];
+
+    short output_unoptimized[SIGNAL_LENGTH];
+    short output_optimized[SIGNAL_LENGTH];
+    short output_macro[SIGNAL_LENGTH];
 
     short expected[SIGNAL_LENGTH] = {
         18,   63,   37,   46,   62,   114,  108,  93,   123,  95,   150,  141,
@@ -144,29 +168,42 @@ int main(void) {
         1550, 1429, 1297, 1351, 1471, 1376, 1398, 1318, 1469, 1448, 1395, 1365,
         1366, 1329, 1360, 1373, 1380, 1304, 1179, 1404};
 
-    // Initialize all arrays
-    init(input, coefs, taps, output);
-
-    /* START FIR */
-
-    // loop through the output signal
     int i;
+
+    // unoptimized
+    init(input, coefs, taps, output_unoptimized);
     for (i = 0; i < SIGNAL_LENGTH; ++i) {
-        unoptimized_fir(input, coefs, taps, output, i);
+        unoptimized_fir(input, coefs, taps, output_unoptimized, i);
     }
 
-    /* END FIR */
+    // optimized
+    init(input, coefs, taps, output_optimized);
+    for (i = 0; i < SIGNAL_LENGTH; ++i) {
+        optimized_fir(input, coefs, taps, output_optimized, i);
+    }
+
+    // macro
+    init(input, coefs, taps, output_macro);
+    for (i = 0; i < SIGNAL_LENGTH; ++i) {
+        MACRO_FIR(input, coefs, taps, output_macro, i);
+    }
 
     // Print output signal
-    printf("Actual\n");
-    print_output(output);
+    /* printf("Actual\n"); */
+    /* print_output(output); */
 
-    printf("Expected\n");
-    print_output(expected);
+    /* printf("Expected\n"); */
+    /* print_output(expected); */
 
     // Ensure output matches expected output
-    if (!compare_output(output, expected, SIGNAL_LENGTH)) {
-        printf("OUTPUT DOES NOT MATCH!\n");
+    if (!compare_output(output_unoptimized, expected, SIGNAL_LENGTH)) {
+        printf("UNOPTIMIZED OUTPUT DOES NOT MATCH!\n");
+    }
+    if (!compare_output(output_optimized, expected, SIGNAL_LENGTH)) {
+        printf("OPTIMIZED OUTPUT DOES NOT MATCH!\n");
+    }
+    if (!compare_output(output_macro, expected, SIGNAL_LENGTH)) {
+        printf("MACRO OUTPUT DOES NOT MATCH!\n");
     }
 
     return 0;
