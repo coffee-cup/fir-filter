@@ -1,23 +1,23 @@
 CC = $(ARM_GCC)
 CFLAGS = -mfloat-abi=softfp -mfpu=neon -static -O3
 
-CCODE = main
-CFILE = $(CCODE).c
-CASM = $(CCODE).s
+TARGET = fir
+SRC = main.c
+ASM = $(TARGET).s
 
-binary: $(CFILE)
-	$(CC) $(CFLAGS) -o $(CCODE) $(CFILE)
+$(TARGET): $(ASM)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRC)
 
-asm: $(CFILE)
-	$(CC) $(CFLAGS) -S -o $(CASM) $(CFILE)
+$(ASM): $(SRC)
+	$(CC) $(CFLAGS) -S -o $(ASM) $(SRC)
+	# $(CC) $(CFLAGS) -c -g -Wa,-ahl=$(ASM) $(SRC)
 
-
-run: $(CCODE)
-	qemu-arm $(CCODE)
+run: $(TARGET)
+	qemu-arm $(TARGET)
 
 .PHONY: all
 all: binary
 
 .PHONY: clean
 clean:
-	rm -f $(CCODE) $(CASM)
+	rm -f $(TARGET) $(ASM)

@@ -172,5 +172,5 @@ $RECYCLE.BIN/
 .env
 
 # Built output
-main
-main.s
+fir
+fir.s
