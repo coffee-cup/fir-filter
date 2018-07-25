@@ -71,7 +71,7 @@ inline void optimized_fir(short *input, short *coefs, short *taps,
     sum += coefs[k] * taps[k];
 
     // perform the convolution for a single output sample
-    for (; k > 0; k--) {
+    for (; k; k--) {
         sum += coefs[k - 1] * taps[k - 1];
         taps[k] = taps[k - 1];
     }
@@ -96,9 +96,8 @@ void optimized_asm_fir(short *input, short *coefs, short *taps, short *output,
     sum += coefs[TAPS_LENGTH - 1] * taps[TAPS_LENGTH - 1];
 
     // k = TAPS_LENGTH - 1
-    /* __asm__ volatile("mov %0, %[tl]" : "=r"(k) : [tl] "I"(TAPS_LENGTH * 2 -
-     * 2)); */
-    k = TAPS_LENGTH * 2 - 2;
+    __asm__ volatile("mov %0, %[tl]" : "=r"(k) : [tl] "I"(TAPS_LENGTH * 2 - 2));
+    /* k = TAPS_LENGTH * 2 - 2; */
 
     // label for loop
     __asm__ volatile("\n1:");
@@ -121,8 +120,7 @@ void optimized_asm_fir(short *input, short *coefs, short *taps, short *output,
         /* printf("%d\t%d\n", tk, sum); */
 
         // taps[k] = temp2
-        /* __asm__ volatile("strh %1, [%0, %2]" : "=r"(taps) : "r"(temp2),
-         * "r"(k)); */
+        __asm__ volatile("strh %1, [%0, %2]" : "=r"(taps) : "r"(temp2), "r"(k));
         taps[k >> 1] = temp2;
 
         // k = k - 1
