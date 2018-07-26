@@ -1,3 +1,4 @@
+#include "arm_neon.h"
 #include <stdio.h>
 
 #define SIGNAL_LENGTH (200)
@@ -19,7 +20,7 @@
         sum += coefs[k] * taps[k];                                             \
                                                                                \
         /* perform the convolution for a single output sample */               \
-        for (; k > 0; k--) {                                                   \
+        for (; k; k--) {                                                       \
             sum += coefs[k - 1] * taps[k - 1];                                 \
             taps[k] = taps[k - 1];                                             \
         }                                                                      \
@@ -58,8 +59,8 @@ void unoptimized_fir(short *input, short *coefs, short *taps, short *output,
   2. Use restrict pointers as arrays should never be the same
   3. Use registers for variables that will be accessed a lot
 */
-inline void optimized_fir(short *input, short *coefs, short *taps,
-                          short *output, short n) {
+void optimized_fir(short *input, short *coefs, short *taps, short *output,
+                   short n) {
     register int k;
     register int sum = 0;
 
@@ -78,6 +79,43 @@ inline void optimized_fir(short *input, short *coefs, short *taps,
 
     // Place sum in output signal
     output[n] = (short)(sum);
+}
+
+void vector_fir(short *input, short *coefs, short *taps, short *output,
+                short n) {
+    register int k;
+    register int sum = 0;
+    register int i;
+
+    int16x4_t sum_v;
+
+    int16x4_t a;
+    int16x4_t b;
+    short values[5];
+
+    // move input sample into taps
+    taps[0] = input[n];
+
+    // perform the convolution for a single output sample
+    for (k = TAPS_LENGTH - 4; k >= 0; k -= 4) {
+        a = vld1_s16(coefs + k);
+        b = vld1_s16(taps + k);
+        sum_v = vmul_s16(a, b);
+        vst1_s16(values, sum_v);
+
+        for (i = 0; i < 4; ++i) {
+            sum += values[i];
+        }
+
+        // shift taps to right
+        taps[k + 3] = taps[k + 2];
+        taps[k + 2] = taps[k + 1];
+        taps[k + 1] = taps[k + 0];
+        taps[k + 0] = taps[k - 1];
+    }
+
+    // Place sum in output signal
+    output[n] = sum;
 }
 
 void optimized_asm_fir(short *input, short *coefs, short *taps, short *output,
@@ -203,6 +241,7 @@ int main(void) {
     short output_optimized[SIGNAL_LENGTH];
     short output_macro[SIGNAL_LENGTH];
     short output_asm[SIGNAL_LENGTH];
+    short output_vector[SIGNAL_LENGTH];
 
     short expected[SIGNAL_LENGTH] = {
         18,   63,   37,   46,   62,   114,  108,  93,   123,  95,   150,  141,
@@ -226,29 +265,37 @@ int main(void) {
     int i;
 
     /* unoptimized */
-    init(input, coefs, taps, output_unoptimized);
-    for (i = 0; i < SIGNAL_LENGTH; ++i) {
-        unoptimized_fir(input, coefs, taps, output_unoptimized, i);
-    }
+    /* init(input, coefs, taps, output_unoptimized); */
+    /* for (i = 0; i < SIGNAL_LENGTH; ++i) { */
+    /*     unoptimized_fir(input, coefs, taps, output_unoptimized, i); */
+    /* } */
 
     /* optimized */
-    init(input, coefs, taps, output_optimized);
-    for (i = 0; i < SIGNAL_LENGTH; ++i) {
-        optimized_fir(input, coefs, taps, output_optimized, i);
-    }
+    /* init(input, coefs, taps, output_optimized); */
+    /* for (i = 0; i < SIGNAL_LENGTH; ++i) { */
+    /*     optimized_fir(input, coefs, taps, output_optimized, i); */
+    /* } */
 
     /* macro */
-    init(input, coefs, taps, output_macro);
-    for (i = 0; i < SIGNAL_LENGTH; ++i) {
-        MACRO_FIR(input, coefs, taps, output_macro, i);
-    }
+    /* init(input, coefs, taps, output_macro); */
+    /* for (i = 0; i < SIGNAL_LENGTH; ++i) { */
+    /*     MACRO_FIR(input, coefs, taps, output_macro, i); */
+    /* } */
 
     // optimized asm
-    init(input, coefs, taps, output_asm);
+    /* init(input, coefs, taps, output_asm); */
+    /* for (i = 0; i < SIGNAL_LENGTH; ++i) { */
+    /*     optimized_asm_fir(input, coefs, taps, output_asm, i); */
+    /* } */
+    /* print_output(output_asm); */
+
+    // vector
+    init(input, coefs, taps, output_vector);
     for (i = 0; i < SIGNAL_LENGTH; ++i) {
-        optimized_asm_fir(input, coefs, taps, output_asm, i);
+        vector_fir(input, coefs, taps, output_vector, i);
     }
-    print_output(output_asm);
+    printf("\n");
+    print_output(output_vector);
 
     // Print output signal
     /* printf("Actual\n"); */
@@ -258,17 +305,20 @@ int main(void) {
     /* print_output(expected); */
 
     // Ensure output matches expected output
-    if (!compare_output(output_unoptimized, expected, SIGNAL_LENGTH)) {
-        printf("UNOPTIMIZED OUTPUT DOES NOT MATCH!\n");
-    }
-    if (!compare_output(output_optimized, expected, SIGNAL_LENGTH)) {
-        printf("OPTIMIZED OUTPUT DOES NOT MATCH!\n");
-    }
-    if (!compare_output(output_macro, expected, SIGNAL_LENGTH)) {
-        printf("MACRO OUTPUT DOES NOT MATCH!\n");
-    }
-    if (!compare_output(output_asm, expected, SIGNAL_LENGTH)) {
-        printf("OPTIMIZED ASM OUTPUT DOES NOT MATCH!\n");
+    /* if (!compare_output(output_unoptimized, expected, SIGNAL_LENGTH)) { */
+    /*     printf("UNOPTIMIZED OUTPUT DOES NOT MATCH!\n"); */
+    /* } */
+    /* if (!compare_output(output_optimized, expected, SIGNAL_LENGTH)) { */
+    /*     printf("OPTIMIZED OUTPUT DOES NOT MATCH!\n"); */
+    /* } */
+    /* if (!compare_output(output_macro, expected, SIGNAL_LENGTH)) { */
+    /*     printf("MACRO OUTPUT DOES NOT MATCH!\n"); */
+    /* } */
+    /* if (!compare_output(output_asm, expected, SIGNAL_LENGTH)) { */
+    /*     printf("OPTIMIZED ASM OUTPUT DOES NOT MATCH!\n"); */
+    /* } */
+    if (!compare_output(output_vector, expected, SIGNAL_LENGTH)) {
+        printf("OPTIMIZED VECTOR OUTPUT DOES NOT MATCH!\n");
     }
 
     return 0;
