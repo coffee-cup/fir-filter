@@ -3,33 +3,28 @@
 Finite impulse response (FIR) implemented for ARM processor in C and optimized
 in ASM.
 
-## TODO
-
-- [ ] Implementation in C
-- [ ] Investigate MLA (multiple and accumulate) instruction
-- [ ] Investigate Vector instructions
-- [ ] Investigate combining MLA and Vector instructions
-- [ ] Optimized ASM
-- [ ] Designed hardware instruction
-
 ## Building Project
 
-Make is used to build the project. There are two make commands available
+Make is used to build the project. The ARM compiler that is used is based on the
+environment variable `ARM_GCC`. When running on the **ugls** lab computers, set
+this environment variable with
 
-Generate ARM assembly
-
-``` shell
-make asm
+```shell
+export ARM_GCC=/opt/arm/4.3.2/bin/arm-linux-gcc
 ```
 
-Generate ARM binary
+Running
 
-``` shell
-make binary
+```shell
+make
 ```
 
-By default, the `asm` command is run
+will generate the binary `fir` and corresponding assembly output `fir.s`.
 
 ## Running Project
 
-Use `qemu`
+```shell
+make run
+```
+
+will do the above and also run the executable with the `qemu-arm` simulator.
