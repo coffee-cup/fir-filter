@@ -179,7 +179,6 @@ int main(void) {
     short output_unoptimized[SIGNAL_LENGTH];
     short output_optimized[SIGNAL_LENGTH];
     short output_macro[SIGNAL_LENGTH];
-    short output_asm[SIGNAL_LENGTH];
     short output_vector[SIGNAL_LENGTH];
 
     short expected[SIGNAL_LENGTH] = {
